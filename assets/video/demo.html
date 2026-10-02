@@ -43,11 +43,23 @@
   .num { color: #f6c177; } .out { color: #f6d58a; }
   .caret { display: inline-block; width: 10px; height: 22px; background: var(--gold); vertical-align: -4px; }
   .chip { display: inline-block; }
-  #stamp { position: absolute; left: 560px; top: 410px; padding: 12px 26px; border: 5px solid var(--green);
-           border-radius: 16px; color: var(--green); background: rgba(243, 234, 214, .96);
-           font: 700 44px "Caveat", cursive; line-height: 1.05; text-align: center; opacity: 0;
-           box-shadow: 0 10px 30px rgba(0,0,0,.35); }
-  #stamp small { display: block; font-size: 28px; color: var(--ink); }
+  #rig, #cards { position: absolute; inset: 0; }
+  #sweep { position: absolute; left: 0; top: 0; opacity: 0; }
+  .rc { position: absolute; left: 0; top: 0; width: 262px; height: 120px; padding: 10px 16px; white-space: nowrap; border-radius: 14px;
+        background: #fffaf0; border: 3px solid var(--ink); box-shadow: 0 10px 0 rgba(0,0,0,.18), 0 18px 30px rgba(0,0,0,.25);
+        font-family: "Caveat", cursive; color: var(--ink); will-change: transform, opacity; }
+  .rc .nm { font-weight: 700; font-size: 31px; line-height: 1; }
+  .rc .zn { font-weight: 600; font-size: 20px; color: #7a6f63; margin-top: 2px; }
+  .rc .st { position: absolute; left: 14px; bottom: 10px; font: 700 22px "Caveat", cursive; padding: 0 12px;
+            border-radius: 999px; color: #fff; }
+  .rc .ppl { position: absolute; right: 14px; bottom: 12px; font: 700 20px "Caveat", cursive; color: #7a6f63; }
+  .rc .stamp { position: absolute; left: 64%; top: 68%; padding: 2px 14px; border: 4px solid var(--green); border-radius: 10px;
+               color: var(--green); background: rgba(255, 250, 240, .92); font: 700 30px "Caveat", cursive; line-height: 1;
+               text-align: center; white-space: nowrap; opacity: 0; }
+  .rc .stamp small { display: block; font-size: 19px; color: var(--ink); }
+  #enter { position: absolute; left: 0; top: 0; padding: 4px 16px; border-radius: 12px; background: #fffaf0;
+           border: 3px solid var(--ink); font: 700 40px "JetBrains Mono", monospace; opacity: 0;
+           box-shadow: 0 5px 0 rgba(0,0,0,.25); }
 
   /* titles */
   .card { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; }
@@ -101,18 +113,23 @@
 
   <!-- his laptop, close up -->
   <div id="laptop" class="layer">
-    <svg width="1280" height="720" viewBox="0 0 1280 720">
-      <g filter="url(#boil)" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round">
-        <rect x="104" y="46" width="1072" height="592" rx="34" fill="#2c3a4a"/>
-        <path d="M40 650 L1240 650 L1200 700 L80 700 Z" fill="#3a4a5c"/>
-        <path d="M560 650 q80 22 160 0" />
-      </g>
-    </svg>
-    <div id="screen">
-      <div class="bar"><span class="dot" style="background:#ff6b5e"></span><span class="dot" style="background:#f6c177"></span><span class="dot" style="background:#7fd18b"></span><span class="ttl">python3 — brooms</span></div>
-      <div id="code"></div>
+    <div id="rig">
+      <svg width="1280" height="720" viewBox="0 0 1280 720">
+        <g filter="url(#boil)" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round">
+          <rect x="104" y="46" width="1072" height="592" rx="34" fill="#2c3a4a"/>
+          <path d="M40 650 L1240 650 L1200 700 L80 700 Z" fill="#3a4a5c"/>
+          <path d="M560 650 q80 22 160 0" />
+        </g>
+      </svg>
+      <div id="screen">
+        <div class="bar"><span class="dot" style="background:#ff6b5e"></span><span class="dot" style="background:#f6c177"></span><span class="dot" style="background:#7fd18b"></span><span class="ttl">python3 — brooms</span></div>
+        <div id="code"></div>
+        <svg id="sweep" width="1040" height="80" viewBox="0 0 1040 80"></svg>
+      </div>
     </div>
-    <div id="stamp">✓ Booked!<small>Norwood House 2.17f · 14:15–16:15</small></div>
+    <div id="cards"></div>
+    <svg id="hands" width="1280" height="720" viewBox="0 0 1280 720"><g filter="url(#boil)" id="handsG"></g></svg>
+    <div id="enter">⏎</div>
   </div>
 
   <!-- clock, titles, end card -->
@@ -130,7 +147,7 @@
   <div id="title" class="card layer" style="top:150px">
     <svg width="150" height="150" viewBox="18 18 124 124" style="position:relative" id="titleLogo"></svg>
     <div class="word" id="titleWord">brooms</div>
-    <div class="tag" id="titleTag">froom <b>finds</b> rooms. brooms <b>books</b> them.</div>
+    <div class="tag" id="titleTag"><b>find</b> a room. <b>book</b> it. from Python.</div>
   </div>
   <div id="end" class="card layer" style="top:118px; opacity:0">
     <svg width="132" height="132" viewBox="18 18 124 124" style="position:relative" id="endLogo"></svg>
@@ -383,66 +400,152 @@ function cam(t) {
 }
 
 // ------------------------------------------------------------------------- the code
-// [start time, tokens]: each token is [text, class]. Typed with uneven keystrokes.
-const P = (s) => ["p", s];
-const LINES = [
-  [11.6, [P(">>> "), ["kw", "from "], ["", "datetime "], ["kw", "import "], ["", "date"]]],
-  [12.35, [P(">>> "), ["kw", "from "], ["", "brooms "], ["kw", "import "], ["fn", "Brooms"]]],
-  [13.1, [P(">>> "), ["", "b = "], ["fn", "Brooms"], ["", "("], ["str", '"ab123"'], ["", ", password)"]]],
-  [14.0, [P(">>> "), ["", "free = [s "], ["kw", "for "], ["", "s "], ["kw", "in "], ["", "b."], ["fn", "availability"],
-          ["", "(date.today(), type="], ["str", '"group study room"'], ["", ")"]]],
-  [15.55, [P("...         "), ["kw", "if "], ["", "s.available "], ["kw", "and "], ["", "s.start.hour == "], ["num", "14"], ["", "]"]]],
-  [16.6, [P(">>> "), ["", "[s.space.name "], ["kw", "for "], ["", "s "], ["kw", "in "], ["", "free]"]]],
-  [17.45, null],   // the answer
-  [17.95, [P(">>> "), ["", "b."], ["fn", "book"], ["", "(free["], ["num", "1"], ["", "], hours="], ["num", "2"], ["", ")"]]],
+// Typed one line at a time with uneven keystrokes; each Enter sets off an effect.
+const P = (x) => ["p", x];
+const CODE = [
+  { toks: [P(">>> "), ["kw", "from "], ["", "brooms "], ["kw", "import "], ["fn", "Brooms"]], pause: 0.3 },
+  { toks: [P(">>> "), ["", "b = "], ["fn", "Brooms"], ["", "("], ["str", '"ab123"'], ["", ", password)"]], pause: 0.35 },
+  { toks: [P(">>> "), ["", "rooms = b."], ["fn", "availability"], ["", "(type="], ["str", '"group study room"'], ["", ")"]],
+    pause: 2.1, fx: "sweep" },
+  { toks: [P(">>> "), ["", "free = [r "], ["kw", "for "], ["", "r "], ["kw", "in "], ["", "rooms "], ["kw", "if "],
+           ["", "r.available "], ["kw", "and "], ["", "r.start.hour == "], ["num", "14"], ["", "]"]], pause: 1.5, fx: "filter" },
+  { toks: [P(">>> "), ["", "b."], ["fn", "book"], ["", "(free["], ["num", "2"], ["", "], hours="], ["num", "2"], ["", ")"]],
+    pause: 2.3, fx: "book" },
 ];
-const ANSWER = ["'Library 1.12'", "'Norwood House 2.17f'", "'8 West 2.32'"];
-const CPS = 30;
-function typed(line, t0, t) {
-  const text = line.map((x) => x[1]).join(""), prompt = line[0][1].length;
-  const seed = hash(text);
-  let n = prompt, acc = t0;
-  while (n < text.length) {
-    acc += (0.55 + 0.9 * noise(seed, n)) / CPS * (" ,(.=".includes(text[n - 1]) ? 1.7 : 1);
-    if (acc > t) break;
-    n++;
+const CPS = 40;
+(() => {   // when each key lands, each line's Enter, and the effects
+  let t = 11.75;
+  for (const line of CODE) {
+    const text = line.toks.map((x) => x[1]).join(""), seed = hash(text), prompt = line.toks[0][1].length;
+    line.text = text; line.start = t; line.keys = [];
+    for (let i = prompt; i < text.length; i++) {
+      t += (0.5 + noise(seed, i)) / CPS * (" ,(.=[".includes(text[i - 1]) ? 1.8 : 1);
+      line.keys.push(t);
+    }
+    line.enter = t + 0.18;
+    t = line.enter + line.pause;
   }
-  return { n, done: n >= text.length, end: acc };
-}
+})();
+const FX = Object.fromEntries(CODE.filter((l) => l.fx).map((l) => [l.fx, l.enter]));
+const LAPTOP_END = CODE[CODE.length - 1].enter + CODE[CODE.length - 1].pause;
+
+// The rooms the search turns up (real Bath group study rooms), as cards
+const ROOMS = [
+  ["8 West 2.27", "8 West", 12, false], ["8 West 2.32", "8 West", 6, true],
+  ["East Building 0.12", "East Building", 12, false], ["Library 1.12", "Library", 6, true],
+  ["Norwood House 2.17a", "Norwood House", 6, false], ["Norwood House 2.17f", "Norwood House", 6, true],
+];
+const CARDS = ROOMS.map(([name, zone, ppl, free]) => {
+  const d = document.createElement("div");
+  d.className = "rc";
+  d.innerHTML = `<div class="nm">${name}</div><div class="zn">${zone}</div>
+    <span class="st" style="background:${free ? "var(--green)" : "var(--coral)"}">${free ? "free 14:15" : "taken"}</span>
+    <span class="ppl">${ppl} 👤</span>
+    ${name.endsWith("2.17f") ? '<div class="stamp">BOOKED ✓<small>14:15–16:15</small></div>' : ""}`;
+  $("cards").appendChild(d);
+  return { d, free, name };
+});
+
 function renderCode(t) {
-  let html = "", cursorShown = false;
-  for (let i = 0; i < LINES.length; i++) {
-    const [t0, line] = LINES[i];
-    if (t < t0) break;
-    if (line === null) {
-      html += `<span class="out">[`;
-      ANSWER.forEach((a, k) => {
-        const p = seg(t, t0 + k * 0.15, t0 + k * 0.15 + 0.25);
-        if (p > 0) html += `${k ? ", " : ""}<span class="chip" style="transform:scale(${outBack(p)});opacity:${p}">${a}</span>`;
-      });
-      html += `]</span>\n`;
-      continue;
-    }
-    const { n, done } = typed(line, t0, t);
+  let html = "";
+  CODE.forEach((line, i) => {
+    if (t < line.start) return;
+    const n = line.toks[0][1].length + line.keys.filter((k) => k <= t).length;
     let left = n;
-    for (const [cls, s] of line) {
-      const part = s.slice(0, Math.max(0, left));
-      left -= s.length;
-      if (part) html += cls ? `<span class="${cls}">${part.replace(/</g, "&lt;")}</span>` : part.replace(/</g, "&lt;");
+    for (const [cls, x] of line.toks) {
+      const part = x.slice(0, Math.max(0, left));
+      left -= x.length;
+      if (part) html += cls ? `<span class="${cls}">${part}</span>` : part;
     }
-    const next = LINES[i + 1];
-    const current = !done || !next || t < next[0];
-    if (current && !cursorShown && (Math.floor(t * 2.6) % 2 === 0 || !done)) { html += `<span class="caret"></span>`; cursorShown = true; }
+    const next = CODE[i + 1];
+    if (!next || t < next.start) html += Math.floor(t * 2.6) % 2 === 0 || t < line.enter ? `<span class="caret"></span>` : "";
     html += "\n";
-  }
+    if (line.fx === "sweep" && t >= line.enter && (!next || t < next.start)) html += "\n";   // room for the broom
+  });
   $("code").innerHTML = html;
+
+  // the broom sweeps the row under the search, leaving sparkles
+  const sw = seg(t, FX.sweep, FX.sweep + 1.0);
+  $("sweep").style.opacity = sw > 0 && sw < 1 ? 1 : 0;
+  $("sweep").style.top = `${40 + 22 + 3 * 32 - 14}px`;
+  if (sw > 0 && sw < 1) {
+    const x = 40 + 900 * inOut(sw), wig = 12 * Math.sin(t * 30);
+    let sp = "";
+    for (let k = 0; k < 14; k++) {
+      const kx = 40 + k * 64;
+      if (kx > x - 30) break;
+      sp += `<text x="${kx}" y="${36 + 8 * noise(4, k)}" font-size="18" fill="var(--gold)" opacity="${0.5 + 0.5 * noise(6, k)}">✦</text>`;
+    }
+    $("sweep").innerHTML = sp + `<g transform="translate(${x} 34) rotate(${-28 + wig}) scale(1.5)">
+      <rect x="-3" y="-34" width="6" height="34" rx="3" fill="#c98b4a"/>
+      <path d="M-14 0 H14 L20 26 H-20 Z" fill="var(--gold)" stroke="#8a5a1a" stroke-width="2"/>
+      <path d="M-8 4 L-11 24 M0 4 V24 M8 4 L11 24" stroke="#8a5a1a" stroke-width="2"/></g>`;
+  }
+
+  // the cards: burst out of the screen, the taken ones fall away, the chosen one gets booked
+  let free = 0;
+  CARDS.forEach((c, k) => {
+    const born = FX.sweep + 0.75 + k * 0.1, p = outBack(seg(t, born, born + 0.4));
+    let x = 219 + (k % 3) * 292, y = 300 + Math.floor(k / 3) * 150, r = (noise(21, k) - 0.5) * 12, sc = p, o = seg(t, born, born + 0.12);
+    const fall = seg(t, FX.filter + 0.1 + 0.08 * k, FX.filter + 0.75 + 0.08 * k);
+    if (!c.free) { y += 520 * fall * fall; r += 70 * fall * (k % 2 ? 1 : -1); }
+    else {
+      const j = free++, line = inOut(seg(t, FX.filter + 0.45, FX.filter + 1.0));
+      x = lerp(x, 219 + j * 292, line); y = lerp(y, 380, line); r = lerp(r, (j - 1) * 4, line);
+      const bk = inOut(seg(t, FX.book + 0.1, FX.book + 0.6));
+      if (c.name.endsWith("2.17f")) { x = lerp(x, 509, bk); y = lerp(y, 330, bk); r = lerp(r, -3, bk); sc *= lerp(1, 1.7, bk); }
+      else { x += (j === 0 ? -700 : 700) * bk * bk; o *= 1 - bk; }
+    }
+    c.d.style.opacity = o;
+    c.d.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${sc})`;
+    if (c.name.endsWith("2.17f")) {
+      const st = seg(t, FX.book + 0.65, FX.book + 0.85);
+      c.d.querySelector(".stamp").style.opacity = st;
+      c.d.querySelector(".stamp").style.transform = `translate(-50%, -50%) rotate(-12deg) scale(${lerp(2.6, 1, outCubic(st))})`;
+    }
+  });
+
+  // the stamp lands: the screen shakes
+  const sh = seg(t, FX.book + 0.85, FX.book + 1.15), amp = 9 * (1 - sh) * (sh > 0 && sh < 1);
+  $("rig").style.transform = `translate(${amp * Math.sin(t * 90)}px, ${amp * Math.cos(t * 70)}px)`;
+
+  // his hands on the keyboard: tapping while he types, slamming Enter
+  const typing = CODE.find((l) => t >= l.start && t < l.enter);
+  const lastKey = typing ? Math.max(...typing.keys.filter((k) => k <= t), typing.start) : -9;
+  const tap = typing ? Math.exp(-(t - lastKey) * 30) : 0;
+  const enterLine = CODE.find((l) => t >= l.enter - 0.05 && t < l.enter + 0.3);
+  const slam = enterLine ? Math.sin(Math.PI * seg(t, enterLine.enter - 0.05, enterLine.enter + 0.3)) : 0;
+  const keyIdx = typing ? typing.keys.filter((k) => k <= t).length : 0;
+  const hand = (x, dy, f) => {
+    const y = 676 + dy, fingers = [-15, -5, 5, 15].map((d, i) =>
+      `M${x + d} ${y - 10} q${2 * f} -14 ${3 * f} -${17 - Math.abs(i - 1.5) * 3}`).join(" ");
+    const palm = `M${x - 24} ${y + 2} C${x - 26} ${y - 16} ${x + 26} ${y - 16} ${x + 24} ${y + 2} C${x + 22} ${y + 16} ${x - 22} ${y + 16} ${x - 24} ${y + 2} Z`;
+    const arm = `M${x - 34 * f} 772 L${x - 6 * f} ${y + 8}`;
+    return `<g transform="translate(${x} ${y}) scale(1.35) translate(${-x} ${-y})"><path d="${arm} ${fingers}" stroke="#fff" stroke-width="15" stroke-linecap="round" fill="none"/>
+      <path d="${palm}" fill="#fff" stroke="#fff" stroke-width="9"/>
+      <path d="${arm}" stroke="var(--navy)" stroke-width="9" stroke-linecap="round"/>
+      <path d="${fingers}" stroke="var(--ink)" stroke-width="9" stroke-linecap="round" fill="none"/>
+      <path d="${fingers}" stroke="#fffaf0" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <path d="${palm}" fill="#fffaf0" stroke="var(--ink)" stroke-width="3.5"/></g>`;
+  };
+  $("handsG").innerHTML = hand(500, keyIdx % 2 ? -12 * tap : 0, 1) + hand(790, (keyIdx % 2 ? 0 : -12 * tap) - 24 * slam, -1);
+  $("enter").style.opacity = slam;
+  $("enter").style.transform = `translate(${850}px, ${560 - 30 * slam}px) rotate(8deg) scale(${0.6 + 0.6 * slam})`;
 }
 
 // ------------------------------------------------------------------------- frame
 let lastSeed = -1;
-function render(t) {
+// The map scenes were timed with the laptop open from 11.4 to 19.4; the laptop scene now runs
+// until LAPTOP_END, so map time stretches over it (nothing moves on the map meanwhile).
+function mapTime(t) {
+  if (t < 11.4) return t;
+  if (t < LAPTOP_END) return 11.4 + (t - 11.4) * (19.4 - 11.4) / (LAPTOP_END - 11.4);
+  return t - (LAPTOP_END - 19.4);
+}
+function render(real) {
+  const t = mapTime(real);
   // the ink boils: a new hand-drawn wobble 8 times a second
-  const seed = Math.floor(t * 8) % 97;
+  const seed = Math.floor(real * 8) % 97;
   if (seed !== lastSeed) { $("boilNoise").setAttribute("seed", seed + 1); lastSeed = seed; }
 
   // titles
@@ -469,10 +572,7 @@ function render(t) {
   const lp = iris > 0 ? 1 : 0;
   $("laptop").style.opacity = lp;
   $("laptop").style.clipPath = `circle(${(1500 * iris).toFixed(1)}px at ${sx.toFixed(1)}px ${sy.toFixed(1)}px)`;
-  if (lp > 0) renderCode(t);
-  const st = seg(t, 18.75, 19.05);
-  $("stamp").style.opacity = st;
-  $("stamp").style.transform = `rotate(${-8 + 3 * st}deg) scale(${lerp(1.8, 1, outBack(st))})`;
+  if (lp > 0) renderCode(real);
 
   // the clock: time is running out
   const ck = seg(t, 3.4, 3.8) * (1 - seg(t, 10.3, 10.6));
@@ -574,7 +674,7 @@ function render(t) {
 }
 
 // ------------------------------------------------------------------------- setup
-const DURATION = 28;
+const DURATION = 28 + (LAPTOP_END - 19.4);
 const LOGO = `<defs><linearGradient id="floorG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f9e8f"/><stop offset="1" stop-color="#17575a"/></linearGradient></defs>
   <rect x="18" y="18" width="124" height="124" rx="30" fill="url(#floorG)"/>
   <g stroke="#fff" stroke-opacity=".3" stroke-width="3" fill="none"><path d="M36 62 V36 H124 V124 H36 V96"/><path d="M36 62 L58 66"/></g>
