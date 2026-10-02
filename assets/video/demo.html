@@ -1,0 +1,601 @@
+<!doctype html>
+<!--
+  brooms README animation, drawn like a sketchbook. Every frame is a pure function of time:
+  render(t). Rendered to video by render_media.py (Playwright screenshots + ffmpeg).
+  Open this file in a browser to preview it live.
+
+  Layout: #map is a hand-drawn campus map (an illustration, not to scale) that a camera
+  moves over, with the student walking on it. The ink "boils" (redraws slightly, like
+  hand-drawn animation) through an SVG displacement filter whose seed changes 8 times a
+  second. #laptop is his screen, close up. #hud holds the clock, the titles and the paper.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@800;900&family=JetBrains+Mono:wght@500;700&display=block" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f3ead6; --paper-dark: #e6d9bb; --ink: #2a2622; --navy: #1d3557; --gold: #e9a92a;
+    --coral: #e2574c; --green: #3f9c6d; --teal: #2f9e8f; --sky: #8fb8de; --grass: #cfe0b4;
+    --screen: #14202e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #222; }
+  #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; background: var(--paper);
+           font-family: "Caveat", cursive; color: var(--ink); }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  .hand { font-family: "Caveat", cursive; font-weight: 700; }
+  .layer { position: absolute; inset: 0; will-change: opacity, transform; }
+
+  /* the laptop, close up */
+  #laptop { opacity: 0; background: radial-gradient(ellipse at 50% 45%, #f6efdf 0%, #e9dcc0 100%); }
+  #screen { position: absolute; left: 120px; top: 62px; width: 1040px; height: 560px; border-radius: 22px;
+            background: var(--screen); overflow: hidden; }
+  #screen .bar { height: 40px; display: flex; align-items: center; gap: 9px; padding: 0 18px;
+                 background: #1c2b3d; }
+  #screen .dot { width: 12px; height: 12px; border-radius: 50%; }
+  #screen .ttl { flex: 1; text-align: center; font: 500 15px "JetBrains Mono", monospace; color: #7f93ab;
+                 margin-right: 54px; }
+  #code { padding: 22px 30px; font: 500 20px/1.6 "JetBrains Mono", monospace; color: #e8eef5;
+          white-space: pre; font-variant-ligatures: none; }
+  .p { color: #8fa3bb; } .kw { color: #ff8a7a; } .str { color: #a6e3a1; } .fn { color: #8fc1ff; }
+  .num { color: #f6c177; } .out { color: #f6d58a; }
+  .caret { display: inline-block; width: 10px; height: 22px; background: var(--gold); vertical-align: -4px; }
+  .chip { display: inline-block; }
+  #stamp { position: absolute; left: 560px; top: 410px; padding: 12px 26px; border: 5px solid var(--green);
+           border-radius: 16px; color: var(--green); background: rgba(243, 234, 214, .96);
+           font: 700 44px "Caveat", cursive; line-height: 1.05; text-align: center; opacity: 0;
+           box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  #stamp small { display: block; font-size: 28px; color: var(--ink); }
+
+  /* titles */
+  .card { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; }
+  .word { font: 900 112px "Nunito", sans-serif; letter-spacing: -3px; line-height: 1; color: var(--navy); }
+  .tag { font: 700 40px "Caveat", cursive; color: #5a5148; margin-top: 8px; }
+  .tag b { color: var(--teal); }
+  .pill { margin-top: 26px; font: 700 26px "JetBrains Mono", monospace; color: var(--paper);
+          background: var(--navy); padding: 12px 26px; border-radius: 14px; box-shadow: 0 6px 0 rgba(0,0,0,.18); }
+  .url { margin-top: 18px; font: 700 30px "Caveat", cursive; color: #5a5148; }
+  #clock { position: absolute; right: 34px; top: 22px; width: 150px; text-align: center; opacity: 0; }
+  #clock svg { position: relative; }
+  #clock .t { font: 700 34px "Caveat", cursive; color: var(--coral); margin-top: -4px; }
+  #paper { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; opacity: .55; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <svg width="0" height="0">
+    <defs>
+      <filter id="boil" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence id="boilNoise" type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="1"/>
+        <feDisplacementMap in="SourceGraphic" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="grain" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7"/>
+        <feColorMatrix values="0 0 0 0 .55  0 0 0 0 .48  0 0 0 0 .38  0 0 0 .5 0"/>
+      </filter>
+      <filter id="wash" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="3" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="14"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- the map: everything inside #cam moves with the camera -->
+  <svg id="map" width="1280" height="720" viewBox="0 0 1280 720">
+    <g filter="url(#boil)">
+      <g id="cam">
+        <g id="ground"></g>
+        <g id="trail"></g>
+        <g id="route"></g>
+        <g id="buildings"></g>
+        <g id="props"></g>
+        <g id="pins"></g>
+        <g id="man"></g>
+        <g id="bubbles"></g>
+        <g id="confetti"></g>
+      </g>
+    </g>
+  </svg>
+
+  <!-- his laptop, close up -->
+  <div id="laptop" class="layer">
+    <svg width="1280" height="720" viewBox="0 0 1280 720">
+      <g filter="url(#boil)" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round">
+        <rect x="104" y="46" width="1072" height="592" rx="34" fill="#2c3a4a"/>
+        <path d="M40 650 L1240 650 L1200 700 L80 700 Z" fill="#3a4a5c"/>
+        <path d="M560 650 q80 22 160 0" />
+      </g>
+    </svg>
+    <div id="screen">
+      <div class="bar"><span class="dot" style="background:#ff6b5e"></span><span class="dot" style="background:#f6c177"></span><span class="dot" style="background:#7fd18b"></span><span class="ttl">python3 — brooms</span></div>
+      <div id="code"></div>
+    </div>
+    <div id="stamp">✓ Booked!<small>Norwood House 2.17f · 14:15–16:15</small></div>
+  </div>
+
+  <!-- clock, titles, end card -->
+  <div id="clock">
+    <svg width="150" height="96" viewBox="-75 -48 150 96">
+      <g filter="url(#boil)" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round">
+        <circle r="34" fill="#fffaf0"/>
+        <line id="hourHand" x1="0" y1="0" x2="0" y2="-18"/>
+        <line id="minHand" x1="0" y1="0" x2="0" y2="-27" stroke="var(--coral)"/>
+        <circle r="2.5" fill="var(--ink)"/>
+      </g>
+    </svg>
+    <div class="t" id="clockText">13:50</div>
+  </div>
+  <div id="title" class="card layer" style="top:150px">
+    <svg width="150" height="150" viewBox="18 18 124 124" style="position:relative" id="titleLogo"></svg>
+    <div class="word" id="titleWord">brooms</div>
+    <div class="tag" id="titleTag">froom <b>finds</b> rooms. brooms <b>books</b> them.</div>
+  </div>
+  <div id="end" class="card layer" style="top:118px; opacity:0">
+    <svg width="132" height="132" viewBox="18 18 124 124" style="position:relative" id="endLogo"></svg>
+    <div class="word" style="font-size:96px">brooms</div>
+    <div class="tag">book a study room at the University of Bath, from Python</div>
+    <div class="pill">pip install brooms</div>
+    <div class="url">github.com/gwerneckp/brooms</div>
+  </div>
+  <svg id="paper" width="1280" height="720"><rect width="1280" height="720" filter="url(#grain)"/></svg>
+</div>
+
+<script>
+// ------------------------------------------------------------------------- helpers
+const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const inOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const outCubic = (p) => 1 - Math.pow(1 - p, 3);
+const outBack = (p) => { const c = 1.9; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const noise = (seed, i) => { const x = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453; return x - Math.floor(x); };
+const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7);
+function el(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const set = (e, attrs) => { for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); };
+
+// ------------------------------------------------------------------------- the map
+// An illustration of Claverton Down, not to scale. Doors are where the student stops.
+const BUILDINGS = [
+  { name: "8 West", x: 160, y: 236, w: 180, h: 110, fill: "#f2c9a0", door: [250, 346] },
+  { name: "1 West", x: 150, y: 452, w: 170, h: 100, fill: "#e8d3a4", door: [235, 452] },
+  { name: "Library", x: 462, y: 214, w: 176, h: 136, fill: "#b9d3e8", door: [550, 350] },
+  { name: "Norwood House", x: 628, y: 440, w: 190, h: 104, fill: "#f0b8a8", door: [720, 440] },
+  { name: "East Building", x: 930, y: 232, w: 190, h: 112, fill: "#d4c6e6", door: [1025, 344] },
+  { name: "4 South", x: 900, y: 452, w: 150, h: 92, fill: "#d9e3c0", door: [975, 452] },
+];
+const BUS = [1168, 392], BENCH = [410, 470];
+const PINS = [
+  { b: "Library", label: "Library 1.12", at: [520, 250] },
+  { b: "Norwood House", label: "Norwood House 2.17f", at: [722, 478], chosen: true },
+  { b: "8 West", label: "8 West 2.32", at: [250, 272] },
+];
+
+function wobblyRect(x, y, w, h, seed) {   // a hand-drawn box: slightly off corners, overshoot
+  const j = (i) => (noise(seed, i) - 0.5) * 5;
+  return `M${x + j(1)} ${y + j(2)} L${x + w + j(3)} ${y + j(4)} L${x + w + j(5)} ${y + h + j(6)} ` +
+         `L${x + j(7)} ${y + h + j(8)} Z M${x - 4} ${y + j(9)} L${x + 14} ${y + j(10)}`;
+}
+
+function drawMap() {
+  const g = $("ground");
+  el("rect", { x: -400, y: -300, width: 2080, height: 1320, fill: "var(--paper)" }, g);
+  // grass, as a watercolour wash
+  el("path", { d: "M70 140 C300 90 900 80 1220 150 C1260 330 1250 520 1200 640 C900 680 300 690 80 630 C40 450 40 300 70 140 Z",
+               fill: "var(--grass)", opacity: 0.75, filter: "url(#wash)" }, g);
+  // the lake, with ducks
+  el("path", { d: "M690 86 C760 54 900 60 950 100 C990 135 940 186 860 190 C780 196 700 180 676 140 C664 118 668 98 690 86 Z",
+               fill: "var(--sky)", stroke: "var(--ink)", "stroke-width": 2.5, opacity: 0.95 }, g);
+  for (const [x, y] of [[760, 120], [840, 150], [900, 112]])
+    el("path", { d: `M${x - 18} ${y} q8 -6 16 0`, stroke: "#fff", "stroke-width": 2, fill: "none", opacity: 0.8 }, g);
+  el("text", { x: 800, y: 82, class: "hand", "font-size": 22, fill: "#3d5a80", "text-anchor": "middle" }, g).textContent = "the lake";
+  // the Parade, the walkway through the middle of campus
+  el("path", { d: "M120 392 L1210 392", stroke: "#e2d2ae", "stroke-width": 46, "stroke-linecap": "round" }, g);
+  el("path", { d: "M120 370 L1210 370 M120 414 L1210 414", stroke: "var(--ink)", "stroke-width": 2.2,
+               "stroke-dasharray": "26 7", fill: "none", opacity: 0.8 }, g);
+  el("text", { x: 820, y: 400, class: "hand", "font-size": 24, fill: "#8a7550", "text-anchor": "middle" }, g).textContent = "the Parade";
+  // little paths to the doors
+  for (const b of BUILDINGS) {
+    const [dx, dy] = b.door, toward = dy < 392 ? 370 : 414;
+    el("path", { d: `M${dx} ${dy} L${dx} ${toward}`, stroke: "#e2d2ae", "stroke-width": 14 }, g);
+  }
+  el("path", { d: `M${BENCH[0]} 414 L${BENCH[0]} ${BENCH[1] - 8}`, stroke: "#e2d2ae", "stroke-width": 14 }, g);
+  // trees
+  for (let i = 0; i < 26; i++) {
+    const x = 90 + noise(5, i) * 1100, y = 150 + noise(9, i) * 500;
+    if (BUILDINGS.some((b) => x > b.x - 30 && x < b.x + b.w + 30 && y > b.y - 30 && y < b.y + b.h + 30)) continue;
+    if (Math.abs(y - 392) < 48 || (x > 660 && x < 970 && y < 210)) continue;
+    const r = 11 + noise(3, i) * 8;
+    el("circle", { cx: x, cy: y, r, fill: "#9cc28a", stroke: "var(--ink)", "stroke-width": 2 }, g);
+    el("path", { d: `M${x - r * 0.4} ${y + 2} q${r * 0.4} -${r * 0.5} ${r * 0.8} 0`, stroke: "var(--ink)",
+                 "stroke-width": 1.5, fill: "none", opacity: 0.6 }, g);
+  }
+  // compass and the map's name
+  const c = el("g", { transform: "translate(110 600)" }, g);
+  el("path", { d: "M0 -26 L7 0 L0 26 L-7 0 Z", fill: "var(--paper)", stroke: "var(--ink)", "stroke-width": 2 }, c);
+  el("path", { d: "M0 -26 L7 0 L-7 0 Z", fill: "var(--coral)" }, c);
+  el("text", { y: -32, class: "hand", "font-size": 20, "text-anchor": "middle" }, c).textContent = "N";
+  el("text", { x: 1180, y: 664, class: "hand", "font-size": 30, "text-anchor": "end", fill: "#5a5148" }, g).textContent =
+    "Claverton Down · University of Bath";
+
+  const bg = $("buildings");
+  BUILDINGS.forEach((b, i) => {
+    el("rect", { x: b.x + 6, y: b.y + 8, width: b.w, height: b.h, fill: "#000", opacity: 0.08, rx: 6 }, bg);
+    el("rect", { x: b.x, y: b.y, width: b.w, height: b.h, fill: b.fill, rx: 6 }, bg);
+    el("path", { d: wobblyRect(b.x, b.y, b.w, b.h, i + 1), stroke: "var(--ink)", "stroke-width": 2.6,
+                 fill: "none", "stroke-linejoin": "round" }, bg);
+    for (let k = 0; k < 3; k++)   // windows
+      el("path", { d: `M${b.x + 22 + k * (b.w - 44) / 2 - 10} ${b.y + 22} h20 v14 h-20 Z`, stroke: "var(--ink)",
+                   "stroke-width": 1.6, fill: "#fffaf0", opacity: 0.8 }, bg);
+    el("text", { x: b.x + b.w / 2, y: b.y + b.h / 2 + 18, class: "hand", "font-size": 28, "text-anchor": "middle" }, bg)
+      .textContent = b.name;
+    const [dx, dy] = b.door, up = dy === b.y;
+    b.doorEl = el("rect", { x: dx - 9, y: up ? dy : dy - 16, width: 18, height: 16, fill: "#7a5a3a",
+                            stroke: "var(--ink)", "stroke-width": 2 }, bg);
+  });
+
+  const p = $("props");
+  // bus stop
+  el("path", { d: `M${BUS[0] + 22} ${BUS[1] - 44} v44 M${BUS[0] + 8} ${BUS[1] - 44} h28 v-14 h-28 Z`,
+               stroke: "var(--ink)", "stroke-width": 2.4, fill: "var(--gold)" }, p);
+  el("text", { x: BUS[0] + 22, y: BUS[1] - 48, class: "hand", "font-size": 13, "text-anchor": "middle" }, p).textContent = "BUS";
+  // the bench
+  el("path", { d: `M${BENCH[0] - 22} ${BENCH[1] - 9} h44 M${BENCH[0] - 22} ${BENCH[1] - 9} v9 M${BENCH[0] + 22} ${BENCH[1] - 9} v9 M${BENCH[0] - 24} ${BENCH[1] - 22} h48`,
+               stroke: "#7a5a3a", "stroke-width": 4, "stroke-linecap": "round", fill: "none" }, p);
+  // door signs
+  for (const [name, text] of [["Library", "FULL"], ["8 West", "TAKEN"], ["Norwood House", "BOOKED ✓"]]) {
+    const b = BUILDINGS.find((x) => x.name === name);
+    const s = el("g", { opacity: 0 }, p);
+    const w = text.length * 11 + 24, ok = text.startsWith("BOOKED");
+    el("rect", { x: -w / 2, y: -15, width: w, height: 30, rx: 5, fill: "#fffaf0",
+                 stroke: ok ? "var(--green)" : "var(--coral)", "stroke-width": 3 }, s);
+    el("text", { y: 9, class: "hand", "font-size": 26, "text-anchor": "middle",
+                 fill: ok ? "var(--green)" : "var(--coral)" }, s).textContent = text;
+    b.sign = s;
+  }
+  // pins (hidden until he searches)
+  for (const pin of PINS) {
+    const g2 = el("g", { opacity: 0 }, $("pins"));
+    el("path", { d: "M0 0 C-14 -16 -14 -36 0 -36 C14 -36 14 -16 0 0 Z", fill: pin.chosen ? "var(--gold)" : "var(--coral)",
+                 stroke: "var(--ink)", "stroke-width": 2.5 }, g2);
+    el("circle", { cy: -24, r: 5, fill: "#fffaf0", stroke: "var(--ink)", "stroke-width": 2 }, g2);
+    const label = el("g", { transform: "translate(0 -48)" }, g2);
+    const w = pin.label.length * 10 + 20;
+    el("rect", { x: -w / 2, y: -20, width: w, height: 28, rx: 6, fill: "#fffaf0", stroke: "var(--ink)", "stroke-width": 2 }, label);
+    el("text", { y: 2, class: "hand", "font-size": 22, "text-anchor": "middle" }, label).textContent = pin.label;
+    pin.g = g2;
+  }
+}
+
+// ------------------------------------------------------------------------- the student
+// A stick figure with a sticker outline: white underneath, ink on top. Angles are from
+// straight down, positive towards where he's facing.
+const POSES = {
+  stand: () => ({ legs: [[0.1, 0], [-0.1, 0]], arms: [[0.12, 0.1], [-0.12, 0.1]], bob: 0, lean: 0 }),
+  walk: (ph) => ({
+    legs: [[0.5 * Math.sin(ph), -0.5 * Math.max(0, Math.sin(ph + 1.6))],
+           [-0.5 * Math.sin(ph), -0.5 * Math.max(0, Math.sin(ph + 1.6 + Math.PI))]],
+    arms: [[-0.5 * Math.sin(ph), 0.35], [0.5 * Math.sin(ph), 0.35]], bob: -1.6 * Math.abs(Math.cos(ph)), lean: 0.06 }),
+  run: (ph) => ({
+    legs: [[0.85 * Math.sin(ph), -1.1 * Math.max(0, Math.sin(ph + 1.4))],
+           [-0.85 * Math.sin(ph), -1.1 * Math.max(0, Math.sin(ph + 1.4 + Math.PI))]],
+    arms: [[-0.9 * Math.sin(ph), 1.3], [0.9 * Math.sin(ph), 1.3]], bob: -3 * Math.abs(Math.cos(ph)), lean: 0.28 }),
+  shrug: (_, k) => ({ legs: [[0.12, 0], [-0.12, 0]], arms: [[1.2 * k, -1.4 * k], [-1.2 * k, 1.4 * k]], bob: -1.5 * k, lean: 0 }),
+  scratch: (ph) => ({ legs: [[0.12, 0], [-0.12, 0]], arms: [[2.5, 1.9 + 0.25 * Math.sin(ph * 3)], [-0.15, 0.2]], bob: 0, lean: -0.05 }),
+  cheer: (ph) => ({ legs: [[0.25, 0], [-0.25, 0]], arms: [[2.7 + 0.15 * Math.sin(ph), 0.1], [-2.7 - 0.15 * Math.sin(ph), -0.1]],
+                    bob: -6 * Math.abs(Math.sin(ph)), lean: 0 }),
+};
+
+function limb(ox, oy, a1, a2, l1, l2, f) {
+  const jx = ox + f * l1 * Math.sin(a1), jy = oy + l1 * Math.cos(a1);
+  const ex = jx + f * l2 * Math.sin(a1 + a2), ey = jy + l2 * Math.cos(a1 + a2);
+  return `M${ox} ${oy} L${jx} ${jy} L${ex} ${ey}`;
+}
+
+function stickman(x, y, pose, f, opts = {}) {
+  const s = 1.3 * (opts.scale ?? 1), o = opts.opacity ?? 1;
+  const P = pose;
+  let hip, neck, head, legs, arms;
+  if (opts.sit) {   // facing us on the bench, legs dangling
+    hip = [0, -13]; neck = [0, -31]; head = [0, -39];
+    legs = [limb(-3, -13, 0.15, 0, 12, 0.1, 1), limb(3, -13, -0.15, 0, 12, 0.1, 1)];
+    arms = [limb(-1, -28, 0.55, -0.2, 8, 7, 1), limb(1, -28, -0.55, 0.2, 8, 7, 1)];
+  } else {
+    const lean = P.lean * 10 * f;
+    hip = [0, -22 + P.bob]; neck = [lean, -39 + P.bob]; head = [lean * 1.15, -47 + P.bob];
+    legs = P.legs.map(([a1, a2]) => limb(0, hip[1], a1, a2, 11, 11.5, f));
+    arms = P.arms.map(([a1, a2]) => limb(neck[0] * 0.92, neck[1] + 3, a1, a2, 9, 8.5, f));
+  }
+  const body = `M${hip[0]} ${hip[1]} L${neck[0]} ${neck[1]}`;
+  const all = [body, ...legs, ...arms].join(" ");
+  const bag = opts.sit ? "" : `<rect x="${neck[0] - f * 9 - 4}" y="${neck[1] + 2}" width="8" height="13" rx="3" fill="var(--gold)" stroke="var(--ink)" stroke-width="2"/>`;
+  return `<g transform="translate(${x} ${y}) scale(${s})" opacity="${o}">
+    <ellipse cx="0" cy="1" rx="11" ry="3" fill="#000" opacity=".12"/>
+    <path d="${all}" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="${head[0]}" cy="${head[1]}" r="10.5" fill="#fff"/>
+    ${bag}
+    <path d="${body}" stroke="var(--navy)" stroke-width="6.5" stroke-linecap="round"/>
+    <path d="${all}" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="${head[0]}" cy="${head[1]}" r="7.5" fill="#fffaf0" stroke="var(--ink)" stroke-width="2.6"/>
+    <circle cx="${head[0] + f * 3}" cy="${head[1] - 1}" r="1.2" fill="var(--ink)"/>
+    ${opts.extra ?? ""}
+  </g>`;
+}
+
+// Where he walks: [start, end, waypoints, gait]. Between legs he stands where he stopped.
+const WALKS = [
+  [3.2, 5.3, [BUS, [560, 392], [550, 374]], "walk"],
+  [6.1, 7.55, [[550, 374], [550, 392], [250, 392], [250, 370]], "walk"],
+  [9.15, 10.15, [[250, 370], [250, 392], [BENCH[0], 392], [BENCH[0], BENCH[1] - 6]], "walk"],
+  [21.5, 22.55, [[BENCH[0], BENCH[1] - 6], [BENCH[0], 392], [720, 392], [720, 444]], "run"],
+];
+function along(pts, p) {
+  const lens = pts.slice(1).map((q, i) => Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]));
+  let d = p * lens.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < lens.length; i++) {
+    if (d <= lens[i] || i === lens.length - 1) {
+      const k = lens[i] ? clamp(d / lens[i]) : 0, [a, b] = [pts[i], pts[i + 1]];
+      return { x: lerp(a[0], b[0], k), y: lerp(a[1], b[1], k), dx: b[0] - a[0], dy: b[1] - a[1] };
+    }
+    d -= lens[i];
+  }
+}
+function student(t) {
+  for (const [t0, t1, pts, gait] of WALKS) {
+    if (t >= t0 && t < t1) {
+      const p = along(pts, (t - t0) / (t1 - t0));
+      return { ...p, gait, ph: (t - t0) * (gait === "run" ? 17 : 10.5), f: p.dx < -0.01 ? -1 : 1 };
+    }
+  }
+  const last = [...WALKS].reverse().find((w) => t >= w[1]);
+  const end = last ? last[2][last[2].length - 1] : BUS;
+  return { x: end[0], y: end[1], gait: "stand", ph: t * 4, f: -1 };
+}
+
+// ------------------------------------------------------------------------- the camera
+function follow(t) {
+  const m = student(Math.max(3.2, Math.min(t, 10.15)));
+  const s = 2.15, hw = 640 / s, hh = 360 / s;
+  return { cx: clamp(m.x, hw - 60, 1280 - hw + 60), cy: clamp(m.y - 34, hh - 60, 720 - hh + 60), s };
+}
+const LAPTOP_AT = [BENCH[0], BENCH[1] - 6 - 1.3 * 22];
+function cam(t) {
+  if (t < 10.4) return follow(t);
+  if (t < 11.3) {
+    const a = follow(10.4), p = inOut(seg(t, 10.4, 11.3));
+    return { cx: lerp(a.cx, LAPTOP_AT[0], p), cy: lerp(a.cy, LAPTOP_AT[1], p), s: a.s * Math.pow(5 / a.s, p) };
+  }
+  if (t < 19.6) return { cx: LAPTOP_AT[0], cy: LAPTOP_AT[1], s: 5 };
+  if (t < 20.6) {
+    const p = inOut(seg(t, 19.6, 20.6));
+    return { cx: lerp(LAPTOP_AT[0], 640, p), cy: lerp(LAPTOP_AT[1], 372, p), s: 5 * Math.pow(1.02 / 5, p) };
+  }
+  const p = inOut(seg(t, 21.2, 22.4)), q = inOut(seg(t, 22.6, 23.8));
+  return { cx: lerp(lerp(640, 600, p), 720, q), cy: lerp(lerp(372, 420, p), 450, q), s: lerp(lerp(1.02, 1.45, p), 2.3, q) };
+}
+
+// ------------------------------------------------------------------------- the code
+// [start time, tokens]: each token is [text, class]. Typed with uneven keystrokes.
+const P = (s) => ["p", s];
+const LINES = [
+  [11.6, [P(">>> "), ["kw", "from "], ["", "datetime "], ["kw", "import "], ["", "date"]]],
+  [12.35, [P(">>> "), ["kw", "from "], ["", "brooms "], ["kw", "import "], ["fn", "Brooms"]]],
+  [13.1, [P(">>> "), ["", "b = "], ["fn", "Brooms"], ["", "("], ["str", '"ab123"'], ["", ", password)"]]],
+  [14.0, [P(">>> "), ["", "free = [s "], ["kw", "for "], ["", "s "], ["kw", "in "], ["", "b."], ["fn", "availability"],
+          ["", "(date.today(), type="], ["str", '"group study room"'], ["", ")"]]],
+  [15.55, [P("...         "), ["kw", "if "], ["", "s.available "], ["kw", "and "], ["", "s.start.hour == "], ["num", "14"], ["", "]"]]],
+  [16.6, [P(">>> "), ["", "[s.space.name "], ["kw", "for "], ["", "s "], ["kw", "in "], ["", "free]"]]],
+  [17.45, null],   // the answer
+  [17.95, [P(">>> "), ["", "b."], ["fn", "book"], ["", "(free["], ["num", "1"], ["", "], hours="], ["num", "2"], ["", ")"]]],
+];
+const ANSWER = ["'Library 1.12'", "'Norwood House 2.17f'", "'8 West 2.32'"];
+const CPS = 30;
+function typed(line, t0, t) {
+  const text = line.map((x) => x[1]).join(""), prompt = line[0][1].length;
+  const seed = hash(text);
+  let n = prompt, acc = t0;
+  while (n < text.length) {
+    acc += (0.55 + 0.9 * noise(seed, n)) / CPS * (" ,(.=".includes(text[n - 1]) ? 1.7 : 1);
+    if (acc > t) break;
+    n++;
+  }
+  return { n, done: n >= text.length, end: acc };
+}
+function renderCode(t) {
+  let html = "", cursorShown = false;
+  for (let i = 0; i < LINES.length; i++) {
+    const [t0, line] = LINES[i];
+    if (t < t0) break;
+    if (line === null) {
+      html += `<span class="out">[`;
+      ANSWER.forEach((a, k) => {
+        const p = seg(t, t0 + k * 0.15, t0 + k * 0.15 + 0.25);
+        if (p > 0) html += `${k ? ", " : ""}<span class="chip" style="transform:scale(${outBack(p)});opacity:${p}">${a}</span>`;
+      });
+      html += `]</span>\n`;
+      continue;
+    }
+    const { n, done } = typed(line, t0, t);
+    let left = n;
+    for (const [cls, s] of line) {
+      const part = s.slice(0, Math.max(0, left));
+      left -= s.length;
+      if (part) html += cls ? `<span class="${cls}">${part.replace(/</g, "&lt;")}</span>` : part.replace(/</g, "&lt;");
+    }
+    const next = LINES[i + 1];
+    const current = !done || !next || t < next[0];
+    if (current && !cursorShown && (Math.floor(t * 2.6) % 2 === 0 || !done)) { html += `<span class="caret"></span>`; cursorShown = true; }
+    html += "\n";
+  }
+  $("code").innerHTML = html;
+}
+
+// ------------------------------------------------------------------------- frame
+let lastSeed = -1;
+function render(t) {
+  // the ink boils: a new hand-drawn wobble 8 times a second
+  const seed = Math.floor(t * 8) % 97;
+  if (seed !== lastSeed) { $("boilNoise").setAttribute("seed", seed + 1); lastSeed = seed; }
+
+  // titles
+  const ti = 1 - seg(t, 2.6, 3.2);
+  $("title").style.opacity = ti;
+  $("title").style.transform = `translateY(${-40 * seg(t, 2.6, 3.2)}px)`;
+  $("titleLogo").style.transform = `scale(${outBack(seg(t, 0.15, 0.85))}) rotate(${-14 + 14 * outCubic(seg(t, 0.15, 1))}deg)`;
+  $("titleWord").style.opacity = seg(t, 0.55, 0.95);
+  $("titleWord").style.transform = `translateY(${18 * (1 - outCubic(seg(t, 0.55, 1)))}px)`;
+  $("titleTag").style.opacity = seg(t, 1.1, 1.5);
+  $("map").style.opacity = seg(t, 2.5, 3.1);
+  const e = seg(t, 24.2, 24.9);
+  $("end").style.opacity = e;
+  $("end").style.transform = `scale(${0.94 + 0.06 * outCubic(e)})`;
+  $("map").style.filter = e > 0 ? `blur(${6 * e}px) opacity(${1 - 0.65 * e})` : "";
+
+  // camera
+  const c = cam(t);
+  $("cam").setAttribute("transform", `translate(640 360) scale(${c.s}) translate(${-c.cx} ${-c.cy})`);
+
+  // laptop close-up
+  const iris = Math.pow(seg(t, 10.8, 11.5), 2.2) * (1 - Math.pow(seg(t, 19.4, 19.85), 0.45));
+  const sx = 640 + (LAPTOP_AT[0] - c.cx) * c.s, sy = 360 + (LAPTOP_AT[1] - c.cy) * c.s;
+  const lp = iris > 0 ? 1 : 0;
+  $("laptop").style.opacity = lp;
+  $("laptop").style.clipPath = `circle(${(1500 * iris).toFixed(1)}px at ${sx.toFixed(1)}px ${sy.toFixed(1)}px)`;
+  if (lp > 0) renderCode(t);
+  const st = seg(t, 18.75, 19.05);
+  $("stamp").style.opacity = st;
+  $("stamp").style.transform = `rotate(${-8 + 3 * st}deg) scale(${lerp(1.8, 1, outBack(st))})`;
+
+  // the clock: time is running out
+  const ck = seg(t, 3.4, 3.8) * (1 - seg(t, 10.3, 10.6));
+  $("clock").style.opacity = ck;
+  const mins = 50 + 8 * seg(t, 3.4, 9.2) + (t > 9.2 ? 1 : 0);
+  $("clockText").textContent = `13:${String(Math.floor(mins)).padStart(2, "0")}`;
+  set($("minHand"), { transform: `rotate(${mins * 6})` });
+  set($("hourHand"), { transform: `rotate(${(13 + mins / 60) * 30})` });
+
+  // trail of where he's been (until he finds a room)
+  const trailEnd = Math.min(t, 10.15), pts = [];
+  for (let u = 3.2; u <= trailEnd; u += 0.05) { const m = student(u); pts.push(`${m.x.toFixed(1)},${(m.y + 2).toFixed(1)}`); }
+  $("trail").innerHTML = pts.length > 1 ? `<polyline points="${pts.join(" ")}" fill="none" stroke="#8a7550" stroke-width="2.5"
+    stroke-dasharray="2 7" stroke-linecap="round" opacity="${0.75 * (1 - seg(t, 20.6, 21.2))}"/>` : "";
+
+  // the route to the booked room draws itself
+  const rp = seg(t, 20.9, 21.5), route = WALKS[3][2];
+  if (rp > 0) {
+    const rpts = [];
+    for (let k = 0; k <= 40 * rp; k++) { const q = along(route, k / 40); rpts.push(`${q.x},${q.y}`); }
+    $("route").innerHTML = `<polyline points="${rpts.join(" ")}" fill="none" stroke="var(--green)" stroke-width="5"
+      stroke-dasharray="10 8" stroke-linecap="round" opacity="${1 - seg(t, 22.6, 23)}"/>`;
+  } else $("route").innerHTML = "";
+
+  // signs on the doors
+  const sign = (name, t0, t1 = 99) => {
+    const b = BUILDINGS.find((x) => x.name === name), p = seg(t, t0, t0 + 0.3), out = 1 - seg(t, t1, t1 + 0.3);
+    const [dx, dy] = b.door, above = dy === b.y + b.h;
+    set(b.sign, { opacity: p * out, transform: `translate(${dx + 58} ${above ? dy - 22 : dy - 26}) rotate(${-7 + 4 * Math.sin(t * 2)}) scale(${outBack(p)})` });
+  };
+  sign("Library", 5.35, 20.3);
+  sign("8 West", 7.6, 20.3);
+  sign("Norwood House", 23.0);
+  const door = BUILDINGS.find((x) => x.name === "Norwood House").doorEl;
+  set(door, { fill: t > 22.4 ? "var(--gold)" : "#7a5a3a" });
+
+  // pins drop on the free rooms
+  PINS.forEach((pin, k) => {
+    const p = seg(t, 20.5 + k * 0.18, 20.85 + k * 0.18);
+    const pulse = pin.chosen && t > 21.1 ? 1 + 0.08 * Math.sin((t - 21.1) * 9) : 1;
+    set(pin.g, { opacity: p * (1 - seg(t, pin.chosen ? 22.45 : 22.0, pin.chosen ? 22.7 : 22.4)),
+                 transform: `translate(${pin.at[0]} ${pin.at[1] - 60 * (1 - outCubic(p))}) scale(${outBack(p) * pulse})` });
+  });
+
+  // the student
+  let m = student(t), html;
+  const shrugK = Math.sin(Math.PI * seg(t, 5.45, 6.05));
+  if (m.gait === "walk" || m.gait === "run") html = stickman(m.x, m.y, POSES[m.gait](m.ph), m.f);
+  else if (t >= 10.15 && t < 21.3) {
+    const open = seg(t, 10.2, 10.55) * (1 - seg(t, 20.9, 21.2));
+    // the back of the lid, rising as it opens, with the screen's glow on his face
+    const h = 2 + 14 * open, glow = open * (0.5 + 0.12 * Math.sin(t * 7));
+    const lid = `<ellipse cx="0" cy="${-15 - h}" rx="${15 * open}" ry="${7 * open}" fill="#bfe4ff" opacity="${0.55 * glow}"/>
+      <rect x="-13" y="${-14 - h}" width="26" height="${h}" rx="3" fill="#fff"/>
+      <rect x="-11.5" y="${-12.5 - h}" width="23" height="${h - 3}" rx="2" fill="#56677a" stroke="var(--ink)" stroke-width="1.6"/>
+      <circle cx="0" cy="${-14 - h / 2}" r="${2.2 * open}" fill="var(--gold)"/>`;
+    html = t < 21.15 ? stickman(m.x, m.y, null, 1, { sit: true, extra: lid })
+                     : stickman(m.x, m.y, POSES.stand(), 1);
+  }
+  else if (t >= 22.55) {   // in through the glowing door
+    const p = seg(t, 22.55, 23.0);
+    html = stickman(720, 444 - 10 * p, POSES.cheer(t * 9), 1, { scale: 1 - 0.5 * p, opacity: 1 - p });
+  }
+  else if (t >= 5.3 && t < 6.1) html = stickman(m.x, m.y, POSES.shrug(0, shrugK), -1);
+  else if (t >= 7.55 && t < 9.15) html = stickman(m.x, m.y, t > 7.9 ? POSES.scratch(t * 3) : POSES.stand(), 1);
+  else html = stickman(m.x, m.y, POSES.stand(), -1);
+  $("man").innerHTML = html;
+
+  // question marks
+  let qs = "";
+  const marks = [[5.45, -1, 26], [8.0, 1, 30], [8.3, -1, 36], [8.6, 1, 44], [8.85, 0, 52]];
+  marks.forEach(([t0, side, size], k) => {
+    const p = seg(t, t0, t0 + 0.35), out = 1 - seg(t, t0 + (k ? 1.5 : 0.7), t0 + (k ? 1.8 : 1.0));
+    if (p <= 0 || out <= 0) return;
+    const hx = m.x + side * (14 + 8 * k), hy = m.y - 62 - 6 * k - 6 * Math.sin(t * 5 + k);
+    qs += `<text x="${hx}" y="${hy}" class="hand" font-size="${size}" text-anchor="middle" fill="${k > 2 ? "var(--coral)" : "var(--ink)"}"
+      stroke="#fff" stroke-width="5" paint-order="stroke" transform="rotate(${side * 12} ${hx} ${hy}) scale(1)"
+      opacity="${p * out}">?</text>`;
+  });
+  if (t > 9.6 && t < 10.6) {   // ...an idea
+    const p = seg(t, 9.6, 9.85) * (1 - seg(t, 10.3, 10.6));
+    qs += `<text x="${m.x + 4}" y="${m.y - 64}" class="hand" font-size="40" text-anchor="middle" fill="var(--gold)"
+      stroke="#fff" stroke-width="5" paint-order="stroke" opacity="${p}">!</text>`;
+  }
+  $("bubbles").innerHTML = qs;
+
+  // confetti at the door
+  let cf = "";
+  if (t > 22.5 && t < 24.6) {
+    for (let k = 0; k < 34; k++) {
+      const a = noise(11, k) * Math.PI - Math.PI, v = 40 + 70 * noise(13, k), dt = t - 22.5;
+      const x = 720 + Math.cos(a) * v * dt, y = 440 + Math.sin(a) * v * dt + 60 * dt * dt;
+      const col = ["var(--gold)", "var(--coral)", "var(--teal)", "var(--navy)"][k % 4];
+      cf += `<rect x="${x}" y="${y}" width="4" height="7" fill="${col}" opacity="${1 - seg(t, 23.8, 24.6)}"
+        transform="rotate(${k * 37 + dt * 300} ${x} ${y})"/>`;
+    }
+  }
+  $("confetti").innerHTML = cf;
+}
+
+// ------------------------------------------------------------------------- setup
+const DURATION = 28;
+const LOGO = `<defs><linearGradient id="floorG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f9e8f"/><stop offset="1" stop-color="#17575a"/></linearGradient></defs>
+  <rect x="18" y="18" width="124" height="124" rx="30" fill="url(#floorG)"/>
+  <g stroke="#fff" stroke-opacity=".3" stroke-width="3" fill="none"><path d="M36 62 V36 H124 V124 H36 V96"/><path d="M36 62 L58 66"/></g>
+  <polyline points="56,74 74,89 56,104" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="84" y="96" width="31" height="10" rx="3" fill="#fff"/>
+  <g transform="rotate(35 112 52)"><rect x="110" y="26" width="5" height="26" rx="2.5" fill="#f2b632"/>
+  <path d="M104 52 H121 L125 72 H100 Z" fill="#f2b632"/></g>`;
+$("titleLogo").innerHTML = LOGO;
+$("endLogo").innerHTML = LOGO.replace(/floorG/g, "floorG2");
+drawMap();
+
+window.DURATION = DURATION;
+window.render = render;
+window.ready = document.fonts.ready.then(() => true);
+
+// Live preview when opened directly in a browser.
+if (!navigator.webdriver) {
+  const start = performance.now();
+  const tick = () => { render(((performance.now() - start) / 1000) % DURATION); requestAnimationFrame(tick); };
+  window.ready.then(tick);
+}
+</script>
+</body>
+</html>
