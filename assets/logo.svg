@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="512" height="512">
+  <title>brooms</title>
+  <defs>
+    <linearGradient id="floor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f9e8f"/>
+      <stop offset="1" stop-color="#17575a"/>
+    </linearGradient>
+    <clipPath id="tile"><rect x="18" y="18" width="124" height="124" rx="30"/></clipPath>
+  </defs>
+  <!-- tile: a room's floor plan, with a door swinging open on the left wall -->
+  <rect x="18" y="18" width="124" height="124" rx="30" fill="url(#floor)"/>
+  <g clip-path="url(#tile)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3" fill="none">
+    <path d="M36 62 V36 H124 V124 H36 V96"/>
+    <path d="M36 62 L58 66"/>
+    <path d="M58 66 A23 23 0 0 1 36 96" stroke-dasharray="3 4"/>
+  </g>
+  <rect x="18" y="136" width="124" height="6" fill="#000" opacity="0.15" clip-path="url(#tile)"/>
+  <!-- terminal prompt >_ -->
+  <polyline points="56,74 74,89 56,104" fill="none" stroke="#ffffff" stroke-width="11"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="84" y="96" width="31" height="10" rx="3" fill="#ffffff"/>
+  <!-- a little broom, in gold -->
+  <g transform="rotate(35 112 52)">
+    <rect x="110" y="26" width="5" height="26" rx="2.5" fill="#f2b632"/>
+    <path d="M104 52 H121 L125 72 H100 Z" fill="#f2b632"/>
+    <path d="M107 56 L105 71 M112.5 56 V71 M118 56 L120 71" stroke="#17575a" stroke-width="2"
+          stroke-linecap="round"/>
+  </g>
+</svg>
