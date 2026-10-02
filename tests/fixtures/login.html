@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<title>University of Bath Single Sign-on</title>
+<meta charset="utf-8"/>
+<meta content="width=device-width initial-scale=1" name="viewport"/>
+<meta content="Central Authentication Service, Apereo, CAS, University of Bath, single sign-on" name="keywords"/>
+<link href="https://fonts.googleapis.com/css?family=Noto+Sans:400,400i,700,700i|Noto+Serif:400,400i,700,700i&amp;subset=cyrillic,latin-ext" rel="stylesheet"/>
+<link href="css/sso.css" rel="stylesheet" type="text/css"/>
+<link href="/favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+</head>
+<body class="single-sign-on">
+<header>
+<div class="row">
+<div class="small-14 medium-10 large-6 column">
+<a href="http://www.bath.ac.uk/"><img alt="University of Bath" src="images/uob-logo-inverse.svg"/></a>
+</div>
+</div>
+</header>
+<main>
+<div class="errors" id="cookiesDisabled" style="display:none;">
+<h2>Browser cookies disabled</h2>
+<p>Your browser does not accept cookies. Single Sign On WILL NOT WORK.</p>
+</div>
+<form action="/login" id="fm1" method="post">
+<section class="summary-information">
+<div class="row">
+<div class="medium-24 columns">
+<h1>Single Sign-On</h1>
+</div>
+</div>
+<div class="row">
+<div class="small-24 medium-20 columns">
+<p class="summary">You will need your University of Bath username and password. Your University username is on your library card.</p>
+</div>
+</div>
+</section>
+<div class="row">
+<div class="small-24 medium-16 large-12 columns">
+</div>
+</div>
+<fieldset>
+<div class="row">
+<div class="small-24 medium-16 large-12 columns">
+<label for="username"><span class="accesskey">U</span>sername:</label>
+<input accesskey="u" autocomplete="off" autofocus="autofocus" class="required" id="username" name="username" size="25" tabindex="1" type="text" value=""/>
+<label for="password"><span class="accesskey">P</span>assword:</label>
+<input accesskey="p" autocomplete="off" class="required" id="password" name="password" size="25" tabindex="2" type="password" value=""/>
+<span id="capslock-on" style="display:none;"><p><img src="images/warning.png" valign="top"/> CAPSLOCK key is turned on!</p></span>
+<input name="lt" type="hidden" value=""/>
+<input name="execution" type="hidden" value="275749c6-800e-4f12-b907-eec286d510ac_ZXlKaGJHY2lPaUpJVXpVeE1pSjkuUlRnd1Vtb3haSFpuTTFWU2RuQmFWbnBVUVRaTmEzQk9MMmxSUkd4cGVtZFdjbWh2U1d0d2NVMXVVMjlMVG5STWNGVjJTR2hhVUhONlYzcGpUWGsxZWsxM2QwNW5TbmsyVlRReFlsZGlXUzkwTTFGVFZYVkVWR0ZrU0ZwalNqRkNXRkEwVFZCNFRXZzRWSEUzZVhsbmVWSlpURGRpZWs1WVpteEhVMlJWYXpSNVdFUkVXV1JRSzA5NEwyZE1ZMDU2VnpBNU9YRm1MMFYyZEVWekwxTk1Na2xWU1VscWNETktLM2xEWjNOVE9GRlBiRlpzYld4eVUydHlObE5KVW1RMWR6UTFVMXBTYlZWWllXVlRZbUpoVURGeFZVMDFhWFZyUlV4Q2QwNVZia1p2YUVzelJIcDFlRGxsYzJORU4wOVBRMU00YmxGd1FuQkZOekF2VlVnM2RGRjFTbTB5TURKWVlrOUhkRWd6ZEZWWWFtWmhTakU0VjA1dU1rdG5ZVlkwUTIxbFduRkxRbTlzVjNGbmJXaE1NaTlHV1VWaFNGUTVOek5WTWpSV0sxQXphMUZJWjFSd1ptRnNMelE1UWxweFJ6RndORXR3Y1ZwVlRFaGlRV05DV0RnMFNtWXlZbkpsTlc0eE1HdHZPRzFSV1hORGMwczFXSEpXZFd0S2FWQlBlR3h3VUVVemJGQk9aUzlsZFVwRE9VWnRWM00yUmpCUWVXTnFabXhLUzJ0M09XUkxjM1JaUWk5aVZrZ3hZVlYyTlRKWU5VZHZTMlZ2YTBKeVMzVkJTelF3Vml0SWRsbDJTeko1WVd0d1JVRmxRa1I1WTBOc1kzWTBUMk5LSzNveE9UTkpaekZFU2paMVJWcENZM2xxYmpGSloycHllRTVSUzJselRVVXlZalZ3VjFWRUx6aHplRGh5WkdOV01XbHJXalJCV1ZNelkxcHdVMk5QWjJoTlQxRlRWbHB5UTBsbWFDdGthQzh3T1d0cVUyTmlTVUZxZW1WUVFuZ3dlWE42TmtkUGJUbExWRnBCVFc1d1pHRTJjRnBXVVhadmRHaEpSbVJMVlZaR2FUZGxjVU5VU0M5VU5FWndTV1ZYV1hkdFl6RnlhVUp0ZHpKM2VGVlpRME0xTDBoelNqSXpXak5FWXpCa09XaFJSelpFWTFCS1VXOVVlRmRJTlhGRldIWnJhRUU0Y0Vsd2FHaElUR0p3YURsallYRmhaV3N2ZG14R2VGa3pWMDV5Y21GdWRqQlhlSGRWY25RdmFtSTVWRlJ0VW1Wak9ERmpSVmQ2UjFOaVVEVk1VMmR5ZDNGWE9YWmxaMHR4U0RaMWVVVkJUMGxtWVdRMlFuSmpkbkJyTm5aeWJHRk9iMmhHTDBoYU1UbElNbWROTVVKMFowOXBXbXAzVVdsc2NISnBUVnA2ZDBSbmJESm9jemhoVDBrMk5uWXdOV1JNWmxOTVFUSnNiRWhGUmpSUFFsZzFaakI2ZERGQlNWQTVaMjVCYjJ4RlR6Tk5aR05yYlVoQlNGcFNibFF2WXk4eVNIY3pjekYwTm1aclZIWlJjM1ZEYkRSeGVIUllVV0pDZWtZMk5IaFNhRXgwTDB0RmVtOTFUSGxWWXk4NU5IRkxibWd3WmpKNVpISmlVRzB4WVRScFRWWnJlakZpTUU1clBRLlpxT2h1UWxrYVNrdDZvbGVLOEd0WVByeTRoZi1JX3Y1OTBsbzhlWUtOZTFLQnEtTUNWdThyX3FDUC1JZ2hJT2JCcTk1R2c5TGVodGlVMFJIZ1BPbGl3"/>
+<input name="_eventId" type="hidden" value="submit"/>
+<input accesskey="l" class="button" name="submit" tabindex="6" type="submit" value="LOGIN"/>
+</div>
+</div>
+</fieldset>
+<section class="security-information">
+<div class="row">
+<div class="medium-24 columns">
+<p>When you have finished using any services that require you to log in, you should <a href="https://auth.bath.ac.uk/logout">log out</a> and close your web browser.</p>
+</div>
+</div>
+<div class="row">
+<div class="small-24 medium-20 columns">
+<p>You can <a href="https://www.bath.ac.uk/guides/reset-or-change-your-university-password/">reset your password</a> if you have forgotten it.</p>
+</div>
+</div>
+</section>
+</form>
+</main>
+<aside class="suggest-improvement">
+<div class="row">
+<div class="small-24 columns">
+<a href="http://www.bath.ac.uk/locations/it-service-desk/" id="suggest-improvement-link">Report any issues on this page</a>
+</div>
+</div>
+</aside>
+<footer class="page-footer">
+<div class="row">
+<div class="small-24 large-8 column">
+<p><a href="http://www.bath.ac.uk/corporate-information/copyright/">© University of Bath 2026</a></p>
+</div>
+<div class="small-24 large-16 column">
+<nav>
+<ul>
+<li><a href="http://www.bath.ac.uk/corporate-information/disclaimer/">Disclaimer</a></li>
+<li><a href="http://www.bath.ac.uk/foi/">Freedom of information</a></li>
+<li><a href="http://www.bath.ac.uk/corporate-information/privacy-and-cookie-policy/">Privacy and cookie policy</a></li>
+<li><a href="http://www.bath.ac.uk/index">A–Z</a></li>
+</ul>
+</nav>
+</div>
+</div>
+</footer>
+</body>
+</html>

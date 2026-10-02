@@ -1,0 +1,26 @@
+{
+ "bookings": [
+  {
+   "id": 68825337,
+   "eid": 10614,
+   "seat_id": 0,
+   "gid": 7472,
+   "lid": 3323,
+   "start": "2026-10-05 08:15:00",
+   "end": "2026-10-05 10:15:00",
+   "checksum": "c04fb50aa04455425408dbb712190317",
+   "options": [
+    "2026-10-05 09:15:00",
+    "2026-10-05 10:15:00"
+   ],
+   "optionSelected": 1,
+   "optionChecksums": [
+    "6c9a2ff1e0d2b99dfd2c98f170cd9b8a",
+    "98be5778dd466a430940898903c990df"
+   ],
+   "cost": 0
+  }
+ ],
+ "gridUpdateData": null,
+ "limitIssues": null
+}
