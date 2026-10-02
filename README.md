@@ -20,7 +20,7 @@
   <sub>▶️ <a href="https://github.com/gwerneckp/brooms/blob/main/assets/demo.mp4">Watch the video</a></sub>
 </p>
 
-[Froom](https://froom.bathcs.com) finds free rooms; brooms **b**ooks **rooms**. It drives [bath.libcal.com](https://bath.libcal.com), where Bath students book group study rooms, tables and meeting booths in the Library, 1 West, 8 West, East Building, Norwood House and the Virgil Building. No browser needed, so it works in scripts, cron jobs and agents.
+brooms **b**ooks **rooms**. It drives [bath.libcal.com](https://bath.libcal.com), where Bath students book group study rooms, tables and meeting booths in the Library, 1 West, 8 West, East Building, Norwood House and the Virgil Building. No browser needed, so it works in scripts, cron jobs and agents.
 
 ## Install
 
