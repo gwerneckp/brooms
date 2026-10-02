@@ -9,16 +9,16 @@ brooms is built around **the University of Bath's study-space bookings** ([bath.
 - **Bookings open 7 days ahead**, in 1-hour slots, and a booking can be 1 or 2 hours.
 - **Cancelling needs the link from the confirmation email** (`/equipment/cancel?id=...`). That link is the only handle on a booking: the site never shows it anywhere else, and its "patron view" logs in by emailed link too. So there's no way to list your own bookings.
 
-## Now (0.1): book and cancel rooms
+## Done (0.1): book and cancel rooms
 
-- [ ] **`spaces()`**: every bookable room, table and booth, on campus or in the city (Virgil Building)
-- [ ] **`availability(day, type=..., zone=..., space=...)`**: every 1-hour slot of every space, from one request
-- [ ] **`book(slot, hours=1|2, name=...)`**: logs in, books, and checks the confirmation. Refuses anything that costs money, and anything the checkout asks for that brooms doesn't know
-- [ ] **`cancel(link)`**: cancels the bookings behind a confirmation email's cancel link
-- [ ] Offline tests against real, scrubbed pages from the site, plus opt-in live tests (read-only, no account needed)
-- [ ] A capture script to refresh the test pages when the site changes
+- [x] **`spaces()`**: every bookable room, table and booth, on campus or in the city (Virgil Building)
+- [x] **`availability(day, type=..., zone=..., space=...)`**: every 1-hour slot of every space, from one request
+- [x] **`book(slot, hours=1|2, name=...)`**: logs in, books, and checks the confirmation. Refuses anything that costs money, and anything the checkout asks for that brooms doesn't know
+- [x] **`cancel(link)`**: cancels the bookings behind a confirmation email's cancel link
+- [x] Offline tests against real, scrubbed pages from the site, plus opt-in live tests (read-only, no account needed)
+- [x] A capture script to refresh the test pages when the site changes
 
-## Next (0.2): CLI and MCP
+## Now (0.2): CLI and MCP
 
 - [ ] A `brooms` command, e.g. `brooms free "group study room" mon 14:00`, `brooms book <space> mon 14:00 --hours 2`, `brooms cancel <link>`, with `--json` for scripts and agents
 - [ ] An optional MCP server (`[mcp]` extra) with read-only tools first, and booking and cancelling as separate, explicit tools
