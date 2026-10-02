@@ -12,6 +12,14 @@
 
 <p align="center"><b>Book a study room at the University of Bath from Python.</b></p>
 
+<p align="center">
+  <a href="https://github.com/gwerneckp/brooms/blob/main/assets/demo.mp4">
+    <img src="https://raw.githubusercontent.com/gwerneckp/brooms/main/assets/demo.gif" alt="brooms demo, drawn like a sketchbook: a stick-figure student walks around a hand-drawn map of the Bath campus, finds the Library full and 8 West taken while the clock ticks towards 2pm, sits on a bench and opens his laptop, books a group study room in a few lines of Python, then runs along a route that draws itself to Norwood House, where the door lights up." width="720">
+  </a>
+  <br>
+  <sub>▶️ <a href="https://github.com/gwerneckp/brooms/blob/main/assets/demo.mp4">Watch the video</a></sub>
+</p>
+
 [Froom](https://froom.bathcs.com) finds free rooms; brooms **b**ooks **rooms**. It drives [bath.libcal.com](https://bath.libcal.com), where Bath students book group study rooms, tables and meeting booths in the Library, 1 West, 8 West, East Building, Norwood House and the Virgil Building. No browser needed, so it works in scripts, cron jobs and agents.
 
 ## Install
