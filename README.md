@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/gwerneckp/brooms/blob/main/assets/demo.mp4">
-    <img src="https://raw.githubusercontent.com/gwerneckp/brooms/main/assets/demo.gif" alt="brooms demo, drawn like a sketchbook: a stick-figure student walks around a hand-drawn map of the Bath campus, finds the Library full and 8 West taken while the clock ticks towards 2pm, sits on a bench and opens his laptop, books a group study room in a few lines of Python, then runs along a route that draws itself to Norwood House, where the door lights up." width="720">
+    <img src="https://raw.githubusercontent.com/gwerneckp/brooms/main/assets/demo.gif" alt="brooms demo, drawn like a sketchbook: a stick-figure student walks around a hand-drawn map of the Bath campus, finds the Library full and 8 West taken while the clock ticks towards 2pm, sits on a bench and opens his laptop, and types a few lines of Python: room cards burst out of the screen, the taken ones fall away, and Norwood House 2.17f gets a BOOKED stamp. Then he runs along a route that draws itself to Norwood House, where the door lights up." width="720">
   </a>
   <br>
   <sub>▶️ <a href="https://github.com/gwerneckp/brooms/blob/main/assets/demo.mp4">Watch the video</a></sub>
