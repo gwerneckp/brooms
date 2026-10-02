@@ -4,4 +4,4 @@ from .client import Brooms, BroomsError, LoginError
 from .models import Booking, Slot, Space
 
 __all__ = ["Booking", "Brooms", "BroomsError", "LoginError", "Slot", "Space"]
-__version__ = "0.1.0"
+__version__ = "0.1.1"

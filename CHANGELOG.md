@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- README only: a new demo video, and a shorter description
+
 ## 0.1.0
 
 First version, built and tested against the University of Bath's LibCal site.
